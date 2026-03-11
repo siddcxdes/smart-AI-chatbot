@@ -1,18 +1,18 @@
-# 🤖 AI Customer Support System
+# AI Customer Support System
 
 A smart chatbot that answers customer questions using company documents. Built with **FastAPI**, **LangChain**, **Ollama**, **ChromaDB**, and **PostgreSQL**.
 
 ---
 
-## 📸 What it looks like
+## What it looks like
 
-- **Chat Page** → Customers ask questions, AI answers instantly
-- **Admin Panel** → View and manage support tickets
-- **Auto Tickets** → When AI can't answer, a ticket is created automatically
+- **Chat Page** - Customers ask questions, AI answers instantly
+- **Admin Panel** - View and manage support tickets
+- **Auto Tickets** - When AI can't answer, a ticket is created automatically
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology | What it does |
 |---|---|
@@ -25,7 +25,7 @@ A smart chatbot that answers customer questions using company documents. Built w
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 smart-AI-chatbot/
@@ -60,7 +60,7 @@ smart-AI-chatbot/
 
 ---
 
-## 🚀 How to Set Up
+## How to Set Up
 
 ### Step 1: Install Prerequisites
 
@@ -126,7 +126,7 @@ uvicorn main:app --reload --port 8000
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Chat
 | Method | Endpoint | Description |
@@ -156,19 +156,19 @@ uvicorn main:app --reload --port 8000
 
 ---
 
-## 🧠 How RAG Works (Simple Explanation)
+## How RAG Works (Simple Explanation)
 
-1. **Load** → Company documents (FAQ, policies) are split into small chunks
-2. **Embed** → Each chunk is converted into numbers (vectors) using AI
-3. **Store** → These vectors are saved in ChromaDB
-4. **Search** → When a user asks a question, we find the most similar chunks
-5. **Generate** → The AI reads those chunks and writes a human-friendly answer
+1. **Load** - Company documents (FAQ, policies) are split into small chunks
+2. **Embed** - Each chunk is converted into numbers (vectors) using AI
+3. **Store** - These vectors are saved in ChromaDB
+4. **Search** - When a user asks a question, we find the most similar chunks
+5. **Generate** - The AI reads those chunks and writes a human-friendly answer
 
 This is called **Retrieval Augmented Generation (RAG)** — the AI doesn't make stuff up, it answers based on real documents.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Edit `config.py` to change settings:
 
@@ -181,7 +181,7 @@ DOCUMENTS_FOLDER = "./company_docs"
 
 ---
 
-## 📝 Adding Your Own Documents
+## Adding Your Own Documents
 
 1. Create `.txt` files with your company information
 2. Put them in the `company_docs/` folder
@@ -190,4 +190,4 @@ DOCUMENTS_FOLDER = "./company_docs"
 
 ---
 
-Built with ♥ by a student learning AI
+Built by a student learning AI
