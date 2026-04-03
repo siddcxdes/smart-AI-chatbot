@@ -1,3 +1,4 @@
+const API_BASE = "https://smart-ai-chatbot-eruy.onrender.com";
 let token = localStorage.getItem("token") || "";
 let currentUserEmail = "";
 
@@ -23,7 +24,7 @@ function checkAuthPage(type) {
         return;
     }
 
-    fetch("/api/users/me", { headers: { "Authorization": "Bearer " + token } })
+    fetch(API_BASE + "/api/users/me", { headers: { "Authorization": "Bearer " + token } })
     .then(res => {
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
@@ -60,7 +61,7 @@ function loginUser() {
     const btn = document.getElementById("loginBtn");
     btn.disabled = true; btn.innerText = "Signing in...";
 
-    fetch("/api/users/login", {
+    fetch(API_BASE + "/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username: email, password: password })
@@ -87,7 +88,7 @@ function registerUser() {
     const btn = document.getElementById("regBtn");
     btn.disabled = true; btn.innerText = "Registering...";
 
-    fetch("/api/users/signup", {
+    fetch(API_BASE + "/api/users/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email, password: password, name: email.split('@')[0] })
@@ -111,7 +112,7 @@ function loginAdmin() {
     let secret = document.getElementById("secretCodeInput").value.trim();
     if (!secret) return;
 
-    fetch("/api/users/admin-secret-login", {
+    fetch(API_BASE + "/api/users/admin-secret-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ secret_code: secret })
@@ -143,7 +144,7 @@ function loadChatHistory() {
         </div>
     `;
 
-    fetch("/api/chat/history/" + encodeURIComponent(currentUserEmail), {
+    fetch(API_BASE + "/api/chat/history/" + encodeURIComponent(currentUserEmail), {
         headers: { "Authorization": "Bearer " + token }
     })
     .then(res => res.json())
@@ -169,7 +170,7 @@ function sendMessage() {
     const btn = document.getElementById("sendBtn");
     btn.disabled = true;
 
-    fetch("/api/chat", {
+    fetch(API_BASE + "/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
         body: JSON.stringify({ user_email: currentUserEmail, question: text })
@@ -205,7 +206,7 @@ function appendMessage(text, sender) {
 }
 
 function loadTickets() {
-    fetch("/api/tickets", { headers: { "Authorization": "Bearer " + token } })
+    fetch(API_BASE + "/api/tickets", { headers: { "Authorization": "Bearer " + token } })
     .then(res => res.json())
     .then(data => {
         let body = document.getElementById("ticketsBody");
@@ -250,7 +251,7 @@ function loadTickets() {
 
 function resolveTicket(id, element) {
     element.innerText = "Wait...";
-    fetch("/api/tickets/" + id, {
+    fetch(API_BASE + "/api/tickets/" + id, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
         body: JSON.stringify({ status: "closed" })
@@ -287,7 +288,7 @@ function uploadDocs() {
     btn.innerText = "Uploading...";
     btn.disabled = true;
 
-    fetch("/api/admin/upload-docs", {
+    fetch(API_BASE + "/api/admin/upload-docs", {
         method: "POST",
         headers: { "Authorization": "Bearer " + token },
         body: formData
@@ -312,7 +313,7 @@ function retrainAI() {
     btn.innerText = "Retraining... Please Wait";
     btn.disabled = true;
 
-    fetch("/api/admin/retrain", {
+    fetch(API_BASE + "/api/admin/retrain", {
         method: "POST",
         headers: { "Authorization": "Bearer " + token }
     })
