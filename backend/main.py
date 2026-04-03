@@ -1,8 +1,7 @@
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.database import engine, Base
 from backend.routes import chat, users, tickets
@@ -22,32 +21,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-THIS_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = THIS_DIR.parent
-FRONTEND_STATIC = PROJECT_ROOT / "frontend" / "static"
-FRONTEND_TEMPLATES = PROJECT_ROOT / "frontend" / "templates"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
-if FRONTEND_STATIC.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_STATIC)), name="static")
-else:
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-
-templates = Jinja2Templates(directory=str(FRONTEND_TEMPLATES) if FRONTEND_TEMPLATES.exists() else "templates")
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(users.router, prefix="/api", tags=["Users"])
 app.include_router(tickets.router, prefix="/api", tags=["Tickets"])
 
-
 @app.get("/", response_class=HTMLResponse)
-def home_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def home_page():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
+@app.get("/chat", response_class=HTMLResponse)
+def chat_page():
+    return FileResponse(FRONTEND_DIR / "chat.html")
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin_page(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
-
+def admin_page():
+    return FileResponse(FRONTEND_DIR / "admin.html")
 
 @app.get("/api/health")
 def health_check():

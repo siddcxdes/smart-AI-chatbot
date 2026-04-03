@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Customer Chat - Resolv.ai</title>
+  <meta name="description" content="Chat with the Resolv.ai AI support agent for instant help.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">resolv.ai</a>
+    <div id="navUserArea" class="nav-right hidden">
+      <span id="navUserEmail" class="nav-email"></span>
+      <button class="btn btn-ghost" onclick="logout('/chat')">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Auth Gate -->
+  <div id="authWrapper" class="auth-wrapper hidden">
+    <div class="card auth-card fade-up">
+
+      <!-- Login -->
+      <div id="loginForm">
+        <h2>Welcome back</h2>
+        <p class="auth-subtitle">Sign in to access AI support</p>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="name@company.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password">
+        </div>
+        <button id="loginBtn" class="btn btn-primary btn-block" onclick="loginUser()">Sign In</button>
+        <p class="auth-toggle">Don't have an account? <a href="javascript:void(0)" onclick="toggleAuth()">Register</a></p>
+      </div>
+
+      <!-- Register -->
+      <div id="regForm" class="hidden">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Get started with AI support</p>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="name@company.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="regPassword" class="form-input" placeholder="Create a password">
+        </div>
+        <button id="regBtn" class="btn btn-primary btn-block" onclick="registerUser()">Register</button>
+        <p class="auth-toggle">Already have an account? <a href="javascript:void(0)" onclick="toggleAuth()">Sign In</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div id="chatWrapper" class="chat-page hidden">
+    <div class="card chat-container fade-up">
+      <div class="chat-header">
+        <div class="chat-avatar">AI</div>
+        <div class="chat-header-info">
+          <h3>Support Agent</h3>
+          <p>Online</p>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-bubble">Hello! How can I assist you today?</div>
+        </div>
+      </div>
+
+      <div class="chat-input-bar">
+        <input type="text" id="chatInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+  <script>window.onload = () => checkAuthPage('user');</script>
+</body>
+</html>

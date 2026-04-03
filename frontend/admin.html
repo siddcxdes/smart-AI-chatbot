@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Resolv.ai</title>
+  <meta name="description" content="Admin dashboard for managing AI support tickets and knowledge base.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/static/favicon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">resolv.ai | Admin</a>
+    <div id="navUserArea" class="nav-right hidden">
+      <span class="nav-badge">Admin</span>
+      <button class="btn btn-ghost" onclick="logout('/admin')">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Auth Gate -->
+  <div id="authWrapper" class="auth-wrapper hidden">
+    <div class="card auth-card fade-up">
+      <div style="text-align:center; margin-bottom:0.5rem;">
+        <svg width="40" height="40" fill="none" stroke="#4f46e5" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      <h2>Admin Access</h2>
+      <p class="auth-subtitle">Enter the master secret code to unlock the dashboard.</p>
+      <div class="form-group">
+        <label class="form-label">Master Secret Code</label>
+        <input type="password" id="secretCodeInput" class="form-input" placeholder="Enter your secure phrase">
+      </div>
+      <button class="btn btn-primary btn-block" onclick="loginAdmin()">Unlock Dashboard</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="adminWrapper" class="hidden">
+    <div class="admin-page" style="max-width:1200px; margin:0 auto;">
+      <div class="admin-header fade-up">
+        <h1>Command Center</h1>
+        <p>Manage support tickets, upload context documents, and retrain the AI knowledge base.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row fade-up">
+        <div class="card stat-card">
+          <div class="stat-label">Total Tickets</div>
+          <div class="stat-number" id="totalTickets">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Needs Action</div>
+          <div class="stat-number danger" id="openTickets">0</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Resolved</div>
+          <div class="stat-number success" id="closedTickets">0</div>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="admin-layout fade-up">
+        <!-- Tickets Table -->
+        <div class="card" style="overflow:hidden;">
+          <div class="section-title">Active Support Tickets</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User Email</th>
+                  <th>Latest Message</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="ticketsBody">
+                <tr><td colspan="5" class="text-center text-muted" style="padding:3rem;">Loading tickets...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-stack">
+          <!-- Upload -->
+          <div class="card sidebar-card">
+            <h3>Upload Context</h3>
+            <p>Feed the AI new policies, FAQs, or documentation files.</p>
+            <div class="upload-area" onclick="document.getElementById('docsInput').click()">
+              <input type="file" id="docsInput" multiple accept=".txt,.pdf,.md">
+              <div class="upload-icon">
+                <svg width="28" height="28" fill="none" stroke="#64748b" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              </div>
+              <div class="upload-text" id="fileCount">Click to browse files or drag and drop</div>
+            </div>
+            <button class="btn btn-primary btn-block btn-sm hidden" id="btnUpload" onclick="uploadDocs()">Upload to Server</button>
+          </div>
+
+          <!-- Retrain -->
+          <div class="card sidebar-card">
+            <h3>AI Knowledge Base</h3>
+            <p>Commit uploaded documents and refresh the vector database.</p>
+            <button class="btn btn-outline btn-block" id="btnRetrain" onclick="retrainAI()">Refresh Knowledge Base</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+  <script>
+    window.onload = () => {
+      setupFileInput();
+      checkAuthPage('admin');
+    };
+  </script>
+</body>
+</html>

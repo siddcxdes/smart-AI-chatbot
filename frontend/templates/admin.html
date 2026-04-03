@@ -3,32 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - AI Support</title>
+    <title>Admin Portal - resolv.ai</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-    <!-- ======== NAVBAR ======== -->
+    <!-- Navbar -->
     <nav class="navbar">
-        <a href="/" class="brand">✦ smart support</a>
+        <a href="/" class="brand">resolv.ai</a>
         <ul class="nav-links">
-            <li><a href="/">Chat</a></li>
-            <li><a href="/admin">Admin Panel</a></li>
+            <li><a href="/">Chat Support</a></li>
+            <li><a href="/admin" style="font-weight: 700; color: var(--primary);">Admin Portal</a></li>
             <li><a href="/docs" target="_blank">API Docs</a></li>
+            <li><a href="#" onclick="logout()" id="navLogoutBtn" style="display:none; color: var(--danger);">Sign Out</a></li>
         </ul>
     </nav>
 
-    <!-- ======== ADMIN AREA ======== -->
-    <div class="admin-container">
-
+    <!-- Admin Area -->
+    <main class="admin-container" id="adminContainer" style="display:none;">
         <div class="admin-header">
             <h1>Admin Dashboard</h1>
-            <button class="action-btn progress" onclick="loadTickets()" style="padding: 10px 20px; font-size: 0.9rem;">
-                ↻ Refresh
-            </button>
+            <div class="admin-actions">
+                <input type="file" id="docUpload" multiple accept=".txt,.md,.pdf" style="display: none;" onchange="uploadDocuments()">
+                <button class="btn btn-secondary" onclick="document.getElementById('docUpload').click()">
+                    Upload Docs
+                </button>
+                <button class="btn btn-secondary" onclick="retrainSystem()" style="color: var(--danger); border-color: var(--danger);">
+                    Retrain AI
+                </button>
+                <button class="btn" onclick="loadTickets()">
+                    Refresh Tickets
+                </button>
+            </div>
         </div>
 
-        <!-- stats cards -->
+        <!-- Stats -->
         <div class="stats-row">
             <div class="stat-card">
                 <div class="number" id="totalTickets">0</div>
@@ -40,162 +49,212 @@
             </div>
             <div class="stat-card">
                 <div class="number" id="closedTickets">0</div>
-                <div class="label">Closed Tickets</div>
+                <div class="label">Resolved Tickets</div>
             </div>
         </div>
 
-        <!-- tickets table -->
-        <div class="tickets-table">
+        <!-- Tickets Table -->
+        <div class="tickets-section">
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Customer Email</th>
+                        <th>Email</th>
                         <th>Question</th>
                         <th>Status</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="ticketsBody">
-                    <!-- tickets will be loaded here -->
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #aaa;">
+                        <td colspan="5" style="text-align: center; color: var(--text-muted);">
                             Loading tickets...
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+    </main>
 
-    </div>
+    <!-- Login Warning / Secret Code Area -->
+    <main class="form-wrapper" id="loginWarning" style="display:none; margin-top: 6rem;">
+        <h2>Admin Protection</h2>
+        <p>Enter the master code to access the admin portal.</p>
+        
+        <div class="input-group">
+            <label>Master Code</label>
+            <input type="password" id="secretCodeInput" placeholder="Enter secret code" onkeypress="if(event.key === 'Enter') loginWithSecret()">
+        </div>
+        <button class="btn" onclick="loginWithSecret()">Unlock Portal</button>
+        <button class="btn btn-secondary" onclick="window.location.href='/'" style="margin-top: 0.75rem;">Return to Chat</button>
+    </main>
 
-    <!-- ======== FOOTER ======== -->
+    <!-- Footer -->
     <footer class="footer">
-        <p>Admin Panel — AI Customer Support System</p>
+        <p>&copy; 2026 resolv.ai Enterprise. All rights reserved.</p>
     </footer>
 
-
-    <!-- ======== JAVASCRIPT ======== -->
     <script>
-        // load tickets when page opens
+        let token = localStorage.getItem("token") || "";
+
         window.onload = function() {
-            loadTickets();
+            if (!token) {
+                showWarning();
+            } else {
+                fetch("/api/users/me", {
+                    headers: { "Authorization": "Bearer " + token }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Unauthorized");
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.role !== "admin") {
+                        showWarning();
+                    } else {
+                        document.getElementById("navLogoutBtn").style.display = "inline-block";
+                        document.getElementById("adminContainer").style.display = "block";
+                        loadTickets();
+                    }
+                })
+                .catch(() => showWarning());
+            }
         };
 
-        // fetch all tickets from backend
-        function loadTickets() {
-            fetch("/api/tickets")
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(tickets) {
-                    displayTickets(tickets);
-                    updateStats(tickets);
-                })
-                .catch(function(error) {
-                    console.error("Error loading tickets:", error);
-                });
+        function showWarning() {
+            document.getElementById("adminContainer").style.display = "none";
+            document.getElementById("loginWarning").style.display = "block";
+            document.getElementById("navLogoutBtn").style.display = "none";
         }
 
-        // show tickets in the table
-        function displayTickets(tickets) {
-            let tbody = document.getElementById("ticketsBody");
+        function loginWithSecret() {
+            let secretCode = document.getElementById("secretCodeInput").value.trim();
+            if (!secretCode) return alert("Please enter the secret code.");
 
-            if (tickets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #aaa;">No tickets yet. All quiet! 🎉</td></tr>';
-                return;
-            }
-
-            let html = "";
-
-            for (let i = 0; i < tickets.length; i++) {
-                let ticket = tickets[i];
-                let date = new Date(ticket.created_at).toLocaleDateString();
-
-                // shorten the question if it's too long
-                let shortQuestion = ticket.question;
-                if (shortQuestion.length > 50) {
-                    shortQuestion = shortQuestion.substring(0, 50) + "...";
-                }
-
-                // pick badge class based on status
-                let badgeClass = ticket.status;
-                let statusText = ticket.status.replace("_", " ");
-
-                html += "<tr>";
-                html += "<td>#" + ticket.id + "</td>";
-                html += "<td>" + ticket.user_email + "</td>";
-                html += '<td title="' + ticket.question + '">' + shortQuestion + "</td>";
-                html += '<td><span class="badge ' + badgeClass + '">' + statusText + "</span></td>";
-                html += "<td>" + date + "</td>";
-                html += "<td>";
-
-                // show different buttons based on status
-                if (ticket.status === "open") {
-                    html += '<button class="action-btn progress" onclick="updateStatus(' + ticket.id + ', \'in_progress\')">Mark In Progress</button>';
-                }
-                if (ticket.status !== "closed") {
-                    html += '<button class="action-btn close-btn" onclick="updateStatus(' + ticket.id + ', \'closed\')">Close</button>';
-                }
-                html += '<button class="action-btn delete" onclick="deleteTicket(' + ticket.id + ')">Delete</button>';
-
-                html += "</td>";
-                html += "</tr>";
-            }
-
-            tbody.innerHTML = html;
-        }
-
-        // update the stat cards at the top
-        function updateStats(tickets) {
-            let total = tickets.length;
-            let open = 0;
-            let closed = 0;
-
-            for (let i = 0; i < tickets.length; i++) {
-                if (tickets[i].status === "open") open++;
-                if (tickets[i].status === "closed") closed++;
-            }
-
-            document.getElementById("totalTickets").textContent = total;
-            document.getElementById("openTickets").textContent = open;
-            document.getElementById("closedTickets").textContent = closed;
-        }
-
-        // change ticket status
-        function updateStatus(ticketId, newStatus) {
-            fetch("/api/tickets/" + ticketId, {
-                method: "PUT",
+            fetch("/api/users/admin-secret-login", {
+                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: newStatus })
+                body: JSON.stringify({ secret_code: secretCode })
             })
-            .then(function() {
-                loadTickets(); // reload the table
+            .then(res => {
+                if (!res.ok) throw new Error("Invalid Master Code");
+                return res.json();
             })
-            .catch(function(error) {
-                alert("Failed to update ticket");
-                console.error(error);
+            .then(data => {
+                localStorage.setItem("token", data.access_token);
+                window.location.reload();
+            })
+            .catch(err => alert(err.message));
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/";
+        }
+
+        function retrainSystem() {
+            if(!confirm("WARNING: Retraining will flush the AI's current vectors and re-embed all documents in company_docs. Do you want to proceed?")) return;
+
+            fetch("/api/admin/retrain", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token }
+            })
+            .then(res => res.json())
+            .then(data => alert(data.message))
+            .catch(err => alert("Error retraining system."));
+        }
+
+        function uploadDocuments() {
+            let files = document.getElementById("docUpload").files;
+            if (files.length === 0) return;
+            if (files.length > 10) return alert("You can only upload a maximum of 10 documents at a time.");
+
+            let formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append("files", files[i]);
+            }
+            
+            let wipeExisting = false;
+            if (confirm("Wipe and replace existing documents?\n\nOK = Delete old docs, use only new ones.\nCancel = Add new docs to existing ones.")) {
+                wipeExisting = true;
+            }
+            formData.append("wipe_existing", wipeExisting ? "true" : "false");
+
+            fetch("/api/admin/upload-docs", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Upload failed.");
+                return res.json();
+            })
+            .then(data => {
+                alert(data.message + "\nRemember to click 'Retrain AI' next!");
+                document.getElementById("docUpload").value = "";
+            })
+            .catch(err => alert(err.message));
+        }
+
+        function loadTickets() {
+            fetch("/api/tickets", {
+                headers: { "Authorization": "Bearer " + token }
+            })
+            .then(res => res.json())
+            .then(data => {
+                let openCount = 0;
+                let closedCount = 0;
+                let body = document.getElementById("ticketsBody");
+                body.innerHTML = "";
+
+                if (data.length === 0) {
+                    body.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No records found...</td></tr>`;
+                    document.getElementById("totalTickets").innerText = 0;
+                    document.getElementById("openTickets").innerText = 0;
+                    document.getElementById("closedTickets").innerText = 0;
+                    return;
+                }
+
+                data.forEach(t => {
+                    if (t.status === "open") openCount++;
+                    else closedCount++;
+
+                    let badgeClass = t.status === "open" ? "open" : "resolved";
+                    let actionHtml = t.status === "open" ? 
+                        `<span class="action-link" onclick="resolveTicket(${t.id})">Mark Resolved</span>` : 
+                        `<span style="color: var(--text-muted);">Done</span>`;
+
+                    body.innerHTML += `
+                        <tr>
+                            <td>#${t.id}</td>
+                            <td>${t.user_email}</td>
+                            <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${t.question}">${t.question}</td>
+                            <td><span class="status-badge ${badgeClass}">${t.status.toUpperCase()}</span></td>
+                            <td>${actionHtml}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById("totalTickets").innerText = data.length;
+                document.getElementById("openTickets").innerText = openCount;
+                document.getElementById("closedTickets").innerText = closedCount;
             });
         }
 
-        // delete a ticket
-        function deleteTicket(ticketId) {
-            let confirmed = confirm("Are you sure you want to delete ticket #" + ticketId + "?");
-            if (!confirmed) return;
-
-            fetch("/api/tickets/" + ticketId, {
-                method: "DELETE"
+        function resolveTicket(id) {
+            fetch("/api/tickets/" + id, {
+                method: "PUT",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify({ status: "resolved" })
             })
-            .then(function() {
-                loadTickets(); // reload the table
-            })
-            .catch(function(error) {
-                alert("Failed to delete ticket");
-                console.error(error);
+            .then(res => {
+                if (res.ok) loadTickets();
+                else alert("Updating ticket failed.");
             });
         }
     </script>
-
 </body>
 </html>
