@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -33,13 +34,16 @@ app.include_router(tickets.router, prefix="/api", tags=["Tickets"])
 @app.on_event("startup")
 def startup_load_vectorstore():
     """Auto-load documents from PostgreSQL into in-memory vector store on startup."""
-    try:
-        db = SessionLocal()
-        load_from_database(db)
-        db.close()
-        print("Vector store loaded from database on startup.")
-    except Exception as e:
-        print(f"Could not load vector store on startup: {e}")
+    def init_task():
+        try:
+            db = SessionLocal()
+            load_from_database(db)
+            db.close()
+            print("Vector store loaded from database on startup.")
+        except Exception as e:
+            print(f"Could not load vector store on startup: {e}")
+
+    threading.Thread(target=init_task, daemon=True).start()
 
 
 @app.get("/", response_class=HTMLResponse)
