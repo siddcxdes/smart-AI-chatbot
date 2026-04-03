@@ -1,70 +1,84 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Form
 from sqlalchemy.orm import Session
-import os
-import shutil
 from typing import List
 
-from backend.database import get_db
-from backend.schemas import ChatRequest, ChatResponse
-from backend.models import ChatHistory, SupportTicket, User
-from backend.ai_engine import get_ai_answer
+from backend.db.database import get_db
+from backend.db.schemas import ChatRequest, ChatResponse
+from backend.db.models import ChatHistory, SupportTicket, User, Document
+from backend.services.ai_engine import get_ai_answer
 from backend.auth import get_admin_user, get_current_user
-from backend.document_loader import load_documents
+from backend.services.document_loader import load_from_database, extract_text_from_file
 
 router = APIRouter()
 
-# ----- ADMIN ONLY: Upload Documents endpoint -----
+
+# ----- ADMIN ONLY: Upload Documents (now stores in PostgreSQL) -----
 @router.post("/admin/upload-docs")
 async def upload_documents(
-    files: List[UploadFile] = File(...), 
+    files: List[UploadFile] = File(...),
     wipe_existing: str = Form("false"),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Allow an admin to upload up to 10 company documents (.txt, .md, .pdf)
-    and optionally wipe all existing documents before saving.
+    Upload company documents (.txt, .md, .pdf).
+    Text is extracted and stored in PostgreSQL — no local filesystem needed.
     """
     if len(files) > 10:
         raise HTTPException(status_code=400, detail="You can only upload up to 10 documents at a time.")
-    
-    # If the user chose to wipe existing files, delete the folder beforehand
-    if wipe_existing.lower() == "true":
-        if os.path.exists("company_docs"):
-            shutil.rmtree("company_docs")
 
-    # Ensure the company_docs folder exists (whether we just deleted it or it didn't exist)
-    os.makedirs("company_docs", exist_ok=True)
+    if wipe_existing.lower() == "true":
+        db.query(Document).delete()
+        db.commit()
 
     saved_files = []
     for file in files:
         if not file.filename.endswith((".txt", ".md", ".pdf")):
             continue
-            
-        safe_filename = os.path.basename(file.filename)
-        file_path = os.path.join("company_docs", safe_filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        saved_files.append(safe_filename)
-        
-    return {"status": "success", "message": f"Successfully uploaded {len(saved_files)} documents.", "files": saved_files}
 
-# ----- ADMIN ONLY: The "Retrain Button" Endpoint -----
+        file_bytes = await file.read()
+        text_content = extract_text_from_file(file_bytes, file.filename)
+
+        if not text_content.strip():
+            continue
+
+        # Check if document with same filename already exists, replace it
+        existing = db.query(Document).filter(Document.filename == file.filename).first()
+        if existing:
+            existing.content = text_content
+            existing.file_type = file.filename.rsplit(".", 1)[-1].lower()
+        else:
+            doc = Document(
+                filename=file.filename,
+                content=text_content,
+                file_type=file.filename.rsplit(".", 1)[-1].lower()
+            )
+            db.add(doc)
+
+        saved_files.append(file.filename)
+
+    db.commit()
+    return {
+        "status": "success",
+        "message": f"Successfully uploaded {len(saved_files)} document(s) to database.",
+        "files": saved_files
+    }
+
+
+# ----- ADMIN ONLY: Retrain (now reads from PostgreSQL) -----
 @router.post("/admin/retrain")
-def retrain_chatbot(admin: User = Depends(get_admin_user)):
+def retrain_chatbot(admin: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """
-    An admin clicks "Retrain". This route deletes the old AI memory
-    and completely re-reads the txt files in `company_docs/`.
+    Rebuild the AI vector store from all documents stored in PostgreSQL.
     """
-    db = load_documents()
-    if db is None:
-        return {"status": "failed", "message": "No documents found in company_docs folder!"}
-    
-    return {"status": "success", "message": "Chatbot memory wiped and successfully retrained with new documents!"}
+    result = load_from_database(db)
+    if result is None:
+        return {"status": "failed", "message": "No documents found in database! Upload some first."}
+
+    return {"status": "success", "message": "AI knowledge base retrained from database documents!"}
 
 
 @router.post("/chat", response_model=ChatResponse)
-# Notice we added `current_user: User = Depends(get_current_user)`.
-# Now you ONLY can chat if you are logged in!
 def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     past_chats = db.query(ChatHistory).filter(
         ChatHistory.user_email == current_user.email
@@ -112,9 +126,7 @@ def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db), current_us
 
 @router.get("/chat/history/{email}")
 def get_chat_history(email: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # You can't spy on other people's chats unless you're an Admin!
     if current_user.email != email and current_user.role != "admin":
-        from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="You can only view your own chat history.")
 
     chats = db.query(ChatHistory).filter(

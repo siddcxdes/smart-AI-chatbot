@@ -1,18 +1,11 @@
-# virtual environment
 venv/
-env/
-
-# python cache
+.venv/
 __pycache__/
 *.pyc
-
-# chroma storage (generated)
-chroma_storage/
-
-# IDE
-.vscode/
-.idea/
-
-# OS files
+.env
 .DS_Store
-Thumbs.db
+chroma_storage/
+company_docs/
+*.egg-info/
+dist/
+build/

@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
-from backend.document_loader import get_vector_store
+from backend.services.document_loader import get_vector_store
 from backend.config import POLLINATIONS_API_KEY
 
 
@@ -24,7 +24,7 @@ def get_ai_answer(question, chat_history=None):
 
     if vector_store is None:
         return {
-            "answer": "Sorry, my knowledge base hasn't been set up yet. Please ask an admin to click Retrain.",
+            "answer": "Sorry, my knowledge base hasn't been set up yet. Please ask an admin to upload documents and click Retrain.",
             "needs_ticket": True
         }
 
@@ -41,11 +41,10 @@ def get_ai_answer(question, chat_history=None):
     else:
         full_question = "Customer's message: " + question
 
-    # Connect to the FREE Pollinations API (It acts exactly like OpenAI!)
     llm = ChatOpenAI(
-        api_key=POLLINATIONS_API_KEY or "pollinations",  # It requires something here
+        api_key=POLLINATIONS_API_KEY or "pollinations",
         base_url="https://text.pollinations.ai/openai",
-        model="openai",  # the model name pollinations expects
+        model="openai",
         temperature=0.7
     )
 

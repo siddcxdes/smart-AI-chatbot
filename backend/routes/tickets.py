@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.database import get_db
-from backend.schemas import TicketResponse, TicketUpdate
-from backend.models import SupportTicket, User
+from backend.db.database import get_db
+from backend.db.schemas import TicketResponse, TicketUpdate
+from backend.db.models import SupportTicket, User
 from backend.auth import get_admin_user
 
 router = APIRouter()
 
-# Notice `admin: User = Depends(get_admin_user)`!
-# It acts like a bouncer. If they aren't admin, it blocks the code from even running.
+
 @router.get("/tickets", response_model=list[TicketResponse])
 def get_all_tickets(db: Session = Depends(get_db), admin: User = Depends(get_admin_user)):
     tickets = db.query(SupportTicket).order_by(

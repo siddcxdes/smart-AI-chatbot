@@ -16,19 +16,19 @@ class ChatResponse(BaseModel):
 class UserCreate(BaseModel):
     name: str
     email: str
-    password: str  # users will send a plain password when they sign up
+    password: str
 
 class UserResponse(BaseModel):
     id: int
     name: str
     email: str
-    role: str      # show if they are user or admin
+    role: str
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-# When a user logs in, we give them this token (like an entry ticket)
+
 class Token(BaseModel):
     access_token: str
     token_type: str

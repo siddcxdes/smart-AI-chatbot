@@ -14,12 +14,7 @@ echo "Installing/Updating requirements..."
 pip install -r backend/requirements.txt
 
 echo "Setting up database..."
-python -m backend.setup_db
-
-if [ ! -d "chroma_storage" ] || [ -z "$(ls -A chroma_storage 2>/dev/null)" ]; then
-    echo "Initializing AI vector store..."
-    python -m backend.document_loader
-fi
+python -m backend.db.setup_db
 
 echo ""
 echo "======================================"
